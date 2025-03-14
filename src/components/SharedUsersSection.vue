@@ -12,15 +12,33 @@
   </template>
   
   <script setup>
-  import { ref } from 'vue'
+  import { ref, onMounted } from 'vue'
   import UserCard from './UserCard.vue'
+  import axios from 'axios'
   
-  const sharedUsers = ref([
-    { id: 1, name: 'John', lastUpdate: '2025-03-06 10:00', location: { lat: 40.7128, lng: -74.0060 } },
-    { id: 2, name: 'Jane', lastUpdate: '2025-03-06 11:30', location: { lat: 34.0522, lng: -118.2437 } }
-  ])
+  const sharedUsers = ref([])
   
-  const deleteUser = (id) => {
+  onMounted(async () => {
+    try {
+      const response = await axios.get('http://localhost:8000/api/shared-users/', {
+        headers: { Authorization: `Token ${localStorage.getItem('token')}` }
+      })
+      console.log('Shared Users Response:', response.data)  // Debug log
+      sharedUsers.value = response.data.map(user => ({
+        id: user.id,
+        name: user.shared_with.username,
+        lastUpdate: user.last_update,
+        location: { lat: 0, lng: 0 }  // Fetch actual location separately if needed
+      }))
+    } catch (error) {
+      console.error('Shared Users Error:', error.response ? error.response.data : error.message)
+    }
+  })
+  
+  const deleteUser = async (id) => {
+    await axios.delete(`http://localhost:8000/api/shared-users/${id}/`, {
+      headers: { Authorization: `Token ${localStorage.getItem('token')}` }
+    })
     sharedUsers.value = sharedUsers.value.filter(user => user.id !== id)
   }
   </script>

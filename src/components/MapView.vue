@@ -10,12 +10,10 @@
   import { ref, onMounted, watch } from 'vue'
   import 'leaflet/dist/leaflet.css'
   import L from 'leaflet'
+  import axios from 'axios'
   
   const props = defineProps({
-    selectedUser: {
-      type: Object,
-      default: null
-    }
+    selectedUser: { type: Object, default: null }
   })
   
   const map = ref(null)
@@ -28,13 +26,19 @@
     }).addTo(leafletMap)
   })
   
-  watch(() => props.selectedUser, (newUser) => {
-    if (newUser && newUser.location) {
-      leafletMap.setView([newUser.location.lat, newUser.location.lng], 13)
-      L.marker([newUser.location.lat, newUser.location.lng])
-        .addTo(leafletMap)
-        .bindPopup(newUser.name)
-        .openPopup()
+  watch(() => props.selectedUser, async (newUser) => {
+    if (newUser) {
+      const response = await axios.get(`http://localhost:8000/api/locations/${newUser.id}/`, {
+        headers: { Authorization: `Token ${localStorage.getItem('token')}` }
+      })
+      const latestLocation = response.data[0] // Most recent location
+      if (latestLocation) {
+        leafletMap.setView([latestLocation.latitude, latestLocation.longitude], 13)
+        L.marker([latestLocation.latitude, latestLocation.longitude])
+          .addTo(leafletMap)
+          .bindPopup(newUser.name)
+          .openPopup()
+      }
     }
   })
   </script>

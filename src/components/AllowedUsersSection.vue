@@ -13,31 +13,42 @@
   </template>
   
   <script setup>
-  import { ref } from 'vue'
+  import { ref, onMounted } from 'vue'
   import AllowedUserCard from './AllowedUserCard.vue'
+  import axios from 'axios'
   
-  const allowedUsers = ref([
-    { id: 1, name: 'Alice', lastViewed: '2025-03-06 09:00' },
-    { id: 2, name: 'Bob', lastViewed: '2025-03-06 10:15' }
-  ])
+  const allowedUsers = ref([])
   
-  const deleteUser = (id) => {
+  onMounted(async () => {
+    try {
+      const response = await axios.get('http://localhost:8000/api/allowed-users/', {
+        headers: { Authorization: `Token ${localStorage.getItem('token')}` }
+      })
+      console.log('Allowed Users Response:', response.data)  // Debug log
+      allowedUsers.value = response.data
+    } catch (error) {
+      console.error('Allowed Users Error:', error.response ? error.response.data : error.message)
+    }
+  })
+  
+  const addPermission = async () => {
+    const username = prompt('Enter username to allow:')
+    if (username) {
+      const response = await axios.post('http://localhost:8000/api/allowed-users/', 
+        { username },
+        { headers: { Authorization: `Token ${localStorage.getItem('token')}` } }
+      )
+      allowedUsers.value.push(response.data)
+    }
+  }
+  
+  const deleteUser = async (id) => {
+    await axios.delete(`http://localhost:8000/api/allowed-users/${id}/`, {
+      headers: { Authorization: `Token ${localStorage.getItem('token')}` }
+    })
     allowedUsers.value = allowedUsers.value.filter(user => user.id !== id)
   }
-  
-  const addPermission = () => {
-    // Simulate adding a new user (you'd replace this with actual logic)
-    const newUser = {
-      id: Date.now(),
-      name: prompt('Enter user name:'),
-      lastViewed: new Date().toISOString().slice(0, 16).replace('T', ' ')
-    }
-    if (newUser.name) {
-      allowedUsers.value.push(newUser)
-    }
-  }
   </script>
-  
   <style scoped>
   .section {
     margin-bottom: 20px;

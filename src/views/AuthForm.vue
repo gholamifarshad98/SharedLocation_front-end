@@ -1,4 +1,5 @@
 <!-- src/views/AuthForm.vue -->
+<!-- src/views/AuthForm.vue -->
 <template>
   <div class="auth-container">
     <div class="auth-card">
@@ -9,16 +10,25 @@
 
       <form @submit.prevent="handleSubmit" class="auth-form">
         <div class="input-group">
-          <label for="phone">Phone Number</label>
+          <label for="username">Username</label>
           <input
-            id="phone"
-            v-model="form.phone_number"
-            type="tel"
-            placeholder="+1234567890"
+            id="username"
+            v-model="form.username"
+            type="text"
+            placeholder="username"
             required
           />
         </div>
-
+        <div class="input-group" v-if="mode === 'register'">
+          <label for="email">Email</label>
+          <input
+            id="email"
+            v-model="form.email"
+            type="email"
+            placeholder="email@example.com"
+            required
+          />
+        </div>
         <div class="input-group">
           <label for="password">Password</label>
           <input
@@ -69,26 +79,30 @@ const router = useRouter()
 const loading = ref(false)
 const error = ref('')
 const form = ref({
-  phone_number: '',
+  username: '',
+  email: '',
   password: ''
 })
 
 const handleSubmit = async () => {
   loading.value = true
   error.value = ''
-
   try {
     const url = props.mode === 'login' 
       ? 'http://localhost:8000/api/login/' 
       : 'http://localhost:8000/api/register/'
-
-    const response = await axios.post(url, form.value)
-    
+    const data = props.mode === 'login' 
+      ? { username: form.value.username, password: form.value.password }
+      : form.value  // Send email only for register
+    const response = await axios.post(url, data, {
+      headers: { 'Content-Type': 'application/json' }
+    })
+    console.log('Response:', response.data)  // Debug log
     localStorage.setItem('token', response.data.token)
-    localStorage.setItem('phone', response.data.phone_number)
-    router.push('/main') // Updated from '/home' to '/main'
-    
+    localStorage.setItem('username', response.data.username)
+    router.push('/main')
   } catch (err) {
+    console.error('Error:', err.response ? err.response.data : err.message)  // Debug log
     error.value = err.response?.data?.error || 'An error occurred. Please try again.'
   } finally {
     loading.value = false
@@ -96,6 +110,26 @@ const handleSubmit = async () => {
 }
 </script>
 
+<style scoped>
+/* Your existing styles remain unchanged */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.auth-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: calc(100vh - 26px);
+  margin: 13px 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 20px;
+  box-sizing: border-box;
+  width: 100%;
+}
 <style scoped>
 html, body {
   margin: 0;
