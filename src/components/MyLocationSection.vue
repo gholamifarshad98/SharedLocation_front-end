@@ -2,12 +2,13 @@
 <template>
   <div class="location-section">
     <h3>My Location</h3>
-    <div v-if="myLocation.lat && myLocation.lng">
+    <div v-if="myLocation.lat && myLocation.lng && !loading">
       <location-card :location="myLocation" />
       <button @click="viewOnMap" :disabled="loading">Click to view location</button>
     </div>
     <div v-else class="empty-message">
-      No location set yet.
+      <span v-if="loading">Loading location...</span>
+      <span v-else>No location set yet.</span>
       <button @click="setCurrentLocation" :disabled="loading">Set Current Location</button>
     </div>
   </div>
@@ -27,16 +28,23 @@ onMounted(async () => {
 })
 
 const fetchLocation = async () => {
+  loading.value = true
   try {
     const response = await axios.get('http://localhost:8000/api/locations/', {
       headers: { Authorization: `Token ${localStorage.getItem('token')}` }
     })
     console.log('Fetched Locations:', response.data)
     if (response.data.length > 0) {
-      myLocation.value = { lat: response.data[0].latitude, lng: response.data[0].longitude }
+      myLocation.value = { 
+        lat: response.data[0].latitude, 
+        lng: response.data[0].longitude,
+        name: response.data[0].user.username // Add name for LocationCard
+      }
     }
   } catch (error) {
     console.error('Fetch Location Error:', error.response ? error.response.data : error.message)
+  } finally {
+    loading.value = false
   }
 }
 
@@ -56,7 +64,11 @@ const setCurrentLocation = async () => {
       { headers: { Authorization: `Token ${localStorage.getItem('token')}` } }
     )
     console.log('Location Set:', response.data)
-    myLocation.value = { lat: latitude, lng: longitude }
+    myLocation.value = { 
+      lat: latitude, 
+      lng: longitude,
+      name: localStorage.getItem('username') // Use logged-in username
+    }
   } catch (error) {
     console.error('Set Location Error:', error.response ? error.response.data : error.message)
   } finally {

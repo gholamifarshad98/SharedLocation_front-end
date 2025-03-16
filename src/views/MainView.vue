@@ -28,9 +28,10 @@ onMounted(async () => {
     })
     console.log('Initial Locations Response:', response.data)
     if (response.data.length > 0) {
+      const latest = response.data[0]
       selectedUser.value = {
-        id: response.data[0].user.id,
-        name: response.data[0].user.username
+        id: latest.user.id,
+        name: latest.user.username // Ensure 'name' matches what LocationCard expects
       }
     }
   } catch (error) {
@@ -42,26 +43,26 @@ onMounted(async () => {
 <style scoped>
 .main-container {
   display: flex;
-  flex-direction: row; /* Ensures horizontal layout */
-  height: 100vh; /* Full viewport height */
-  width: 100vw; /* Full viewport width */
+  flex-direction: row;
+  height: 100vh;
+  width: 100vw;
   margin: 0;
   padding: 0;
   overflow: hidden;
-  position: absolute; /* Ensures it sticks to the body */
+  position: absolute;
   top: 0;
   left: 0;
 }
 
 .side-panel {
-  width: 300px; /* Fixed width for side panel */
-  flex-shrink: 0; /* Prevents shrinking */
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); /* Matches your previous design */
-  height: 100%; /* Full height of container */
+  width: 300px;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  height: 100%;
 }
 
 .map-view {
-  flex: 1; /* Takes remaining space */
-  height: 100%; /* Full height of container */
+  flex: 1;
+  height: 100%;
 }
 </style>
