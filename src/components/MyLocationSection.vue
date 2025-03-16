@@ -3,8 +3,7 @@
   <div class="location-section">
     <h3>My Location</h3>
     <div v-if="myLocation.lat && myLocation.lng && !loading">
-      <location-card :location="myLocation" />
-      <button @click="viewOnMap" :disabled="loading">Click to view location</button>
+      <location-card :user="userData" />
     </div>
     <div v-else class="empty-message">
       <span v-if="loading">Loading location...</span>
@@ -20,6 +19,7 @@ import LocationCard from './LocationCard.vue'
 import axios from 'axios'
 
 const myLocation = ref({ lat: 0, lng: 0 })
+const userData = ref({ username: '', id: null, last_updated: null })
 const mapView = ref(null)
 const loading = ref(false)
 
@@ -35,10 +35,13 @@ const fetchLocation = async () => {
     })
     console.log('Fetched Locations:', response.data)
     if (response.data.length > 0) {
-      myLocation.value = { 
-        lat: response.data[0].latitude, 
-        lng: response.data[0].longitude,
-        name: response.data[0].user.username // Add name for LocationCard
+      const latest = response.data[0]
+      myLocation.value = { lat: latest.latitude, lng: latest.longitude }
+      userData.value = { 
+        username: latest.user.username, 
+        name: latest.user.username, // Adjust if you have a separate name field
+        id: latest.user.id,
+        last_updated: latest.last_updated
       }
     }
   } catch (error) {
@@ -64,24 +67,17 @@ const setCurrentLocation = async () => {
       { headers: { Authorization: `Token ${localStorage.getItem('token')}` } }
     )
     console.log('Location Set:', response.data)
-    myLocation.value = { 
-      lat: latitude, 
-      lng: longitude,
-      name: localStorage.getItem('username') // Use logged-in username
+    myLocation.value = { lat: latitude, lng: longitude }
+    userData.value = { 
+      username: localStorage.getItem('username'), 
+      name: localStorage.getItem('username'),
+      id: Number(localStorage.getItem('userId')),
+      last_updated: response.data.last_updated
     }
   } catch (error) {
     console.error('Set Location Error:', error.response ? error.response.data : error.message)
   } finally {
     loading.value = false
-  }
-}
-
-const viewOnMap = () => {
-  const userId = localStorage.getItem('userId')
-  if (userId && mapView.value) {
-    mapView.value.fetchUserLocation(userId)
-  } else {
-    console.error('Cannot view on map: userId or mapView missing', { userId, mapView: !!mapView.value })
   }
 }
 
