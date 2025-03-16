@@ -3,7 +3,10 @@
   <div class="location-section">
     <h3>My Location</h3>
     <div v-if="myLocation.lat && myLocation.lng && !loading">
-      <location-card :user="userData" />
+      <location-card 
+        :user="userData" 
+        @location-updated="handleLocationUpdate"
+      />
     </div>
     <div v-else class="empty-message">
       <span v-if="loading">Loading location...</span>
@@ -78,6 +81,23 @@ const setCurrentLocation = async () => {
     console.error('Set Location Error:', error.response ? error.response.data : error.message)
   } finally {
     loading.value = false
+  }
+}
+
+// New handler for the location-updated event
+const handleLocationUpdate = (updatedData) => {
+  // Update the local userData object with the new last_updated value
+  userData.value = {
+    ...userData.value,
+    last_updated: updatedData.last_updated
+  }
+  
+  // Update the location if coordinates are provided
+  if (updatedData.latitude && updatedData.longitude) {
+    myLocation.value = {
+      lat: updatedData.latitude,
+      lng: updatedData.longitude
+    }
   }
 }
 

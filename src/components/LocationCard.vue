@@ -43,6 +43,9 @@ const props = defineProps({
   }
 })
 
+// Define emits to communicate with parent component
+const emit = defineEmits(['location-updated'])
+
 const selectUser = inject('selectUser')
 
 const handleViewClick = () => {
@@ -68,7 +71,14 @@ const updateLocation = async () => {
       { headers: { Authorization: `Token ${localStorage.getItem('token')}` } }
     )
     console.log('Location Updated for User:', props.user.username, response.data)
-    props.user.last_updated = response.data.last_updated
+    
+    // Instead of mutating the prop, emit an event with the updated data
+    emit('location-updated', {
+      id: props.user.id,
+      last_updated: response.data.last_updated,
+      latitude,
+      longitude
+    })
   } catch (error) {
     console.error('Update Location Error:', error.response ? error.response.data : error.message)
   }
