@@ -1,5 +1,4 @@
 <!-- src/views/AuthForm.vue -->
-<!-- src/views/AuthForm.vue -->
 <template>
   <div class="auth-container">
     <div class="auth-card">
@@ -17,6 +16,7 @@
             type="text"
             placeholder="username"
             required
+            :disabled="loading"
           />
         </div>
         <div class="input-group" v-if="mode === 'register'">
@@ -27,6 +27,7 @@
             type="email"
             placeholder="email@example.com"
             required
+            :disabled="loading"
           />
         </div>
         <div class="input-group">
@@ -37,6 +38,7 @@
             type="password"
             placeholder="••••••••"
             required
+            :disabled="loading"
           />
         </div>
 
@@ -97,39 +99,23 @@ const handleSubmit = async () => {
     const response = await axios.post(url, data, {
       headers: { 'Content-Type': 'application/json' }
     })
-    console.log('Response:', response.data)  // Debug log
+    console.log('Auth Response:', response.data)  // Debug log
     localStorage.setItem('token', response.data.token)
     localStorage.setItem('username', response.data.username)
+    localStorage.setItem('userId', response.data.user_id.toString())  // Store user_id as string
     router.push('/main')
   } catch (err) {
-    console.error('Error:', err.response ? err.response.data : err.message)  // Debug log
-    error.value = err.response?.data?.error || 'An error occurred. Please try again.'
+    console.error('Auth Error:', err.response ? err.response.data : err.message)  // Debug log
+    const errorMsg = err.response?.data?.error || 
+                     (err.response?.status === 400 ? 'Invalid input. Please check your details.' : 
+                     'An error occurred. Please try again.')
+    error.value = errorMsg
   } finally {
     loading.value = false
   }
 }
 </script>
 
-<style scoped>
-/* Your existing styles remain unchanged */
-html, body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  overflow: hidden;
-}
-
-.auth-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: calc(100vh - 26px);
-  margin: 13px 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 20px;
-  box-sizing: border-box;
-  width: 100%;
-}
 <style scoped>
 html, body {
   margin: 0;
@@ -203,6 +189,11 @@ html, body {
   outline: none;
 }
 
+.input-group input:disabled {
+  background: #f0f2f5;
+  cursor: not-allowed;
+}
+
 .auth-button {
   width: 100%;
   padding: 12px;
@@ -216,7 +207,7 @@ html, body {
   transition: background 0.3s ease;
 }
 
-.auth-button:hover {
+.auth-button:hover:not(:disabled) {
   background: #5a6fd1;
 }
 
@@ -229,6 +220,7 @@ html, body {
   color: #ff4444;
   text-align: center;
   margin-top: 1rem;
+  font-size: 0.9rem;
 }
 
 .auth-footer {

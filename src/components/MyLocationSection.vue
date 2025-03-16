@@ -1,45 +1,116 @@
 <!-- src/components/MyLocationSection.vue -->
 <template>
-    <div class="section">
-      <h3>My Location</h3>
-      <location-card :user="{ name: 'Me', location: myLocation }" />
+  <div class="location-section">
+    <h3>My Location</h3>
+    <div v-if="myLocation.lat && myLocation.lng">
+      <location-card :location="myLocation" />
+      <button @click="viewOnMap" :disabled="loading">Click to view location</button>
     </div>
+    <div v-else class="empty-message">
+      No location set yet.
+      <button @click="setCurrentLocation" :disabled="loading">Set Current Location</button>
+    </div>
+  </div>
 </template>
-  
+
 <script setup>
 import { ref, onMounted } from 'vue'
 import LocationCard from './LocationCard.vue'
 import axios from 'axios'
 
 const myLocation = ref({ lat: 0, lng: 0 })
+const mapView = ref(null)
+const loading = ref(false)
 
 onMounted(async () => {
-  navigator.geolocation.getCurrentPosition(
-    async (position) => {
-      myLocation.value = {
-        lat: position.coords.latitude,
-        lng: position.coords.longitude
-      }
-      try {
-        const response = await axios.post('http://localhost:8000/api/locations/', 
-          { latitude: myLocation.value.lat, longitude: myLocation.value.lng },
-          { headers: { Authorization: `Token ${localStorage.getItem('token')}` } }
-        )
-        console.log('Location POST Response:', response.data)
-      } catch (error) {
-        console.error('Location POST Error:', error.response ? error.response.data : error.message)
-      }
-    },
-    (error) => console.error('Error getting location:', error)
-  )
+  await fetchLocation()
 })
+
+const fetchLocation = async () => {
+  try {
+    const response = await axios.get('http://localhost:8000/api/locations/', {
+      headers: { Authorization: `Token ${localStorage.getItem('token')}` }
+    })
+    console.log('Fetched Locations:', response.data)
+    if (response.data.length > 0) {
+      myLocation.value = { lat: response.data[0].latitude, lng: response.data[0].longitude }
+    }
+  } catch (error) {
+    console.error('Fetch Location Error:', error.response ? error.response.data : error.message)
+  }
+}
+
+const setCurrentLocation = async () => {
+  loading.value = true
+  try {
+    if (!navigator.geolocation) {
+      throw new Error('Geolocation not supported')
+    }
+    const position = await new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(resolve, reject)
+    })
+    const { latitude, longitude } = position.coords
+    const response = await axios.post(
+      'http://localhost:8000/api/locations/',
+      { latitude, longitude },
+      { headers: { Authorization: `Token ${localStorage.getItem('token')}` } }
+    )
+    console.log('Location Set:', response.data)
+    myLocation.value = { lat: latitude, lng: longitude }
+  } catch (error) {
+    console.error('Set Location Error:', error.response ? error.response.data : error.message)
+  } finally {
+    loading.value = false
+  }
+}
+
+const viewOnMap = () => {
+  const userId = localStorage.getItem('userId')
+  if (userId && mapView.value) {
+    mapView.value.fetchUserLocation(userId)
+  } else {
+    console.error('Cannot view on map: userId or mapView missing', { userId, mapView: !!mapView.value })
+  }
+}
+
+defineExpose({ setMapView: (map) => (mapView.value = map) })
 </script>
-  <style scoped>
-  .section {
-    margin-bottom: 20px;
-  }
-  h3 {
-    color: white;
-    margin-bottom: 10px;
-  }
-  </style>
+
+<style scoped>
+.location-section {
+  padding: 15px;
+}
+
+h3 {
+  color: white;
+  margin-bottom: 15px;
+  font-size: 1.2rem;
+}
+
+.empty-message {
+  color: #e2e8f0;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+button {
+  padding: 10px;
+  background-color: #667eea;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  margin-top: 10px;
+  transition: background-color 0.3s ease;
+}
+
+button:hover:not(:disabled) {
+  background-color: #5a6fd1;
+}
+
+button:disabled {
+  background-color: #a0aec0;
+  cursor: not-allowed;
+}
+</style>
