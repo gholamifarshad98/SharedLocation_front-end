@@ -16,7 +16,12 @@
           <circle cx="12" cy="10" r="3"></circle>
         </svg>
       </button>
-      <button class="icon-btn update-btn" @click="updateLocation" title="Update to my location">
+      <button 
+        class="icon-btn update-btn" 
+        @click="updateLocation" 
+        title="Update to my location" 
+        :disabled="isOtherUser"
+      >
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M23 4v6h-6"></path>
           <path d="M1 20v-6h6"></path>
@@ -28,7 +33,7 @@
 </template>
 
 <script setup>
-import { inject } from 'vue'
+import { inject, computed } from 'vue'
 import axios from 'axios'
 
 const props = defineProps({
@@ -43,10 +48,14 @@ const props = defineProps({
   }
 })
 
-// Define emits to communicate with parent component
 const emit = defineEmits(['location-updated'])
 
 const selectUser = inject('selectUser')
+
+const isOtherUser = computed(() => {
+  const currentUserId = Number(localStorage.getItem('userId')) // Assumes userId is stored on login
+  return props.user.id !== currentUserId
+})
 
 const handleViewClick = () => {
   if (props.user.id) {
@@ -57,6 +66,7 @@ const handleViewClick = () => {
 }
 
 const updateLocation = async () => {
+  if (isOtherUser.value) return // Disabled button prevents this, but extra safety
   try {
     if (!navigator.geolocation) {
       throw new Error('Geolocation not supported')
@@ -71,8 +81,6 @@ const updateLocation = async () => {
       { headers: { Authorization: `Token ${localStorage.getItem('token')}` } }
     )
     console.log('Location Updated for User:', props.user.username, response.data)
-    
-    // Instead of mutating the prop, emit an event with the updated data
     emit('location-updated', {
       id: props.user.id,
       last_updated: response.data.last_updated,
@@ -142,11 +150,16 @@ h4 {
   justify-content: center;
 }
 
-.view-btn:hover svg {
+.icon-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.view-btn:hover svg:not(:disabled) {
   stroke: #5a6fd1;
 }
 
-.update-btn:hover svg {
+.update-btn:hover svg:not(:disabled) {
   stroke: #5a6fd1;
 }
 </style>

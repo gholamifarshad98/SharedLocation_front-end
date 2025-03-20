@@ -57,10 +57,10 @@ const fetchSharedUsers = async () => {
 
 const fetchAllowedUsers = async () => {
   try {
-    const response = await axios.get('http://localhost:8000/api/allowed-users/', {
+    const response = await axios.get('http://localhost:8000/api/allowed-by-users/', {
       headers: { Authorization: `Token ${localStorage.getItem('token')}` }
     })
-    console.log('Allowed Users Response:', response.data)
+    console.log('Allowed By Users Response:', response.data)
     const usersWithLocations = await Promise.all(
       response.data.map(async (allowed) => {
         try {
@@ -82,12 +82,12 @@ const fetchAllowedUsers = async () => {
     )
     allowedUsers.value = usersWithLocations.filter(user => user && user.last_updated)
   } catch (error) {
-    console.error('Fetch Allowed Users Error:', error.response ? error.response.data : error.message)
+    console.error('Fetch Allowed By Users Error:', error.response ? error.response.data : error.message)
     allowedUsers.value = []
   }
 }
 
-const handleUserAllowed = () => { // Removed unused 'newUser' parameter
+const handleUserAllowed = () => {
   fetchAllowedUsers() // Refresh allowed users after adding permission
 }
 
