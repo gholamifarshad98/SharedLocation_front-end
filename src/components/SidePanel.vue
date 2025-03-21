@@ -39,18 +39,20 @@ onMounted(async () => {
 
 const fetchSharedUsers = async () => {
   try {
-    const response = await axios.get('http://localhost:8000/api/shared-users/', {
-      headers: { Authorization: `Token ${localStorage.getItem('token')}` }
+    const token = localStorage.getItem('token')
+    console.log('Token used for shared users:', token)
+    const response = await axios.get('http://localhost:8000/api/allowed-users/', {
+      headers: { Authorization: `Token ${token}` }
     })
-    console.log('Shared Users:', response.data)
-    sharedUsers.value = response.data.map(shared => ({
-      id: shared.id,
-      username: shared.shared_with.username,
-      name: shared.shared_with.username,
-      shared_with_id: shared.shared_with.id
+    console.log('Allowed Users (Shared Users):', response.data)
+    sharedUsers.value = response.data.map(allowed => ({
+      id: allowed.id,
+      username: allowed.allowed_to.username,
+      name: allowed.allowed_to.username,
+      shared_with_id: allowed.allowed_to.id // Match UserCard prop expectations
     }))
   } catch (error) {
-    console.error('Fetch Shared Users Error:', error.response ? error.response.data : error.message)
+    console.error('Fetch Allowed Users (Shared Users) Error:', error.response ? error.response.data : error.message)
     sharedUsers.value = []
   }
 }
@@ -58,7 +60,7 @@ const fetchSharedUsers = async () => {
 const fetchAllowedUsers = async () => {
   try {
     const token = localStorage.getItem('token')
-    console.log('Token used:', token) // Verify token
+    console.log('Token used:', token)
     const response = await axios.get('http://localhost:8000/api/allowed-by-users/', {
       headers: { Authorization: `Token ${token}` }
     })
@@ -66,7 +68,7 @@ const fetchAllowedUsers = async () => {
     const usersWithLocations = await Promise.all(
       response.data.map(async (allowed) => {
         try {
-          console.log(`Fetching location for owner ID: ${allowed.owner.id}`) // Log owner ID
+          console.log(`Fetching location for owner ID: ${allowed.owner.id}`)
           const locResponse = await axios.get(`http://localhost:8000/api/locations/${allowed.owner.id}/`, {
             headers: { Authorization: `Token ${token}` }
           })
@@ -77,7 +79,7 @@ const fetchAllowedUsers = async () => {
             name: allowed.owner.username,
             last_updated: locResponse.data[0]?.last_updated || null
           }
-          console.log('Mapped User:', mappedUser) // Log each mapped user
+          console.log('Mapped User:', mappedUser)
           return mappedUser
         } catch (locError) {
           console.error(`Location fetch error for ${allowed.owner.username}:`, locError.response?.data || locError.message)
@@ -101,7 +103,8 @@ const fetchAllowedUsers = async () => {
 }
 
 const handleUserAllowed = () => {
-  fetchAllowedUsers()
+  fetchSharedUsers() // Refresh shared users after allowing
+  fetchAllowedUsers() // Refresh allowed users too
 }
 
 provide('selectUser', selectUser)

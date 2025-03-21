@@ -1,125 +1,75 @@
 <!-- src/components/UserCard.vue -->
 <template>
-    <div class="card">
-      <h4>{{ user.name }}</h4>
-      <p>Last Update: {{ user.lastUpdate }}</p>
-      <div class="button-group">
-        <button class="view-btn" @click="viewLocation" title="View Location">
-          <i class="fas fa-eye"></i>
-        </button>
-        <button class="edit-btn" @click="editUser" title="Edit User">
-          <i class="fas fa-pen"></i>
-        </button>
-        <button class="delete-btn" @click="handleDelete" title="Delete User">
-          <i class="fas fa-trash"></i>
-        </button>
-      </div>
+  <div class="card">
+    <div class="user-row">
+      <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="profile-icon">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+        <circle cx="12" cy="7" r="4"></circle>
+      </svg>
+      <h4>{{ user.username || 'Unknown User' }}</h4>
     </div>
-  </template>
-  
-  <script setup>
-  import { inject } from 'vue'
-  
-  const props = defineProps({
-    user: {
-      type: Object,
-      required: true
-    }
-  })
-  
-  const emit = defineEmits(['delete'])
-  
-  const selectUser = inject('selectUser')
-  
-  const viewLocation = () => {
-    selectUser(props.user)
+    <button class="icon-btn delete-btn" @click="emit('delete', user.id)" title="Stop sharing">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="3 6 5 6 21 6"></polyline>
+        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+        <line x1="10" y1="11" x2="10" y2="17"></line>
+        <line x1="14" y1="11" x2="14" y2="17"></line>
+      </svg>
+    </button>
+  </div>
+</template>
+
+<script setup>
+defineProps({
+  user: {
+    type: Object,
+    default: () => ({ id: null, username: '', name: '', shared_with_id: null })
   }
-  
-  const handleDelete = () => {
-    emit('delete')
-  }
-  
-  const editUser = () => {
-    // Placeholder for edit functionality - implement as needed
-    console.log('Edit user:', props.user.name)
-    // You could emit an 'edit' event or open a modal here
-  }
-  </script>
-  
-  <style scoped>
-  .card {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    padding: 15px;
-    margin-bottom: 10px;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-  }
-  
-  .card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  }
-  
-  h4 {
-    margin: 0 0 5px 0;
-    color: white;
-    font-size: 1.1rem;
-  }
-  
-  p {
-    margin: 0 0 10px 0;
-    font-size: 0.9rem;
-    color: #e2e8f0;
-  }
-  
-  .button-group {
-    display: flex;
-    justify-content: flex-start;
-    gap: 10px; /* Space between buttons */
-  }
-  
-  button {
-    padding: 8px;
-    border: none;
-    border-radius: 50%; /* Circular buttons for elegance */
-    cursor: pointer;
-    font-size: 1rem;
-    width: 36px; /* Fixed width for uniformity */
-    height: 36px; /* Fixed height for uniformity */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background-color 0.3s ease, transform 0.2s ease;
-  }
-  
-  button:hover {
-    transform: scale(1.1); /* Slight scale on hover for feedback */
-  }
-  
-  .view-btn {
-    background-color: #667eea; /* Matches your theme */
-    color: white;
-  }
-  
-  .view-btn:hover {
-    background-color: #5a6fd1;
-  }
-  
-  .edit-btn {
-    background-color: #f1c40f; /* Yellow for edit */
-    color: white;
-  }
-  
-  .edit-btn:hover {
-    background-color: #e2b607;
-  }
-  
-  .delete-btn {
-    background-color: #ff4444; /* Red for delete */
-    color: white;
-  }
-  
-  .delete-btn:hover {
-    background-color: #cc3333;
-  }
-  </style>
+})
+
+const emit = defineEmits(['delete'])
+</script>
+
+<style scoped>
+.card {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background 0.3s;
+}
+
+.card:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.user-row {
+  display: flex;
+  align-items: center;
+}
+
+.profile-icon {
+  width: 40px;
+  height: 40px;
+  margin-right: 10px;
+}
+
+h4 {
+  margin: 0;
+  color: white;
+  font-size: 1.1rem;
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+}
+
+.delete-btn:hover svg {
+  stroke: #ff4444;
+}
+</style>
