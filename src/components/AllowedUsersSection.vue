@@ -5,7 +5,7 @@
     <div v-if="users.length === 0" class="empty-message">
       No users have allowed you to view their locations yet.
     </div>
-    <location-card
+    <LocationCard
       v-for="user in users"
       :key="user.id"
       :user="user"
@@ -14,6 +14,8 @@
 </template>
 
 <script setup>
+import LocationCard from './LocationCard.vue' 
+
 defineProps({
   users: {
     type: Array,

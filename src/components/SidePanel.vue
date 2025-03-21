@@ -25,10 +25,10 @@ const myLocation = ref(null)
 const sharedUsers = ref([])
 const allowedUsers = ref([])
 const showAllowModal = ref(false)
-const selectUser = inject('selectUser') // From MainView.vue
+const selectUser = inject('selectUser')
 
 onMounted(async () => {
-  const map = inject('mapRef') // From MainView.vue
+  const map = inject('mapRef')
   if (myLocation.value && map) {
     myLocation.value.setMapView(map)
   } else {
@@ -57,30 +57,43 @@ const fetchSharedUsers = async () => {
 
 const fetchAllowedUsers = async () => {
   try {
+    const token = localStorage.getItem('token')
+    console.log('Token used:', token) // Verify token
     const response = await axios.get('http://localhost:8000/api/allowed-by-users/', {
-      headers: { Authorization: `Token ${localStorage.getItem('token')}` }
+      headers: { Authorization: `Token ${token}` }
     })
     console.log('Allowed By Users Response:', response.data)
     const usersWithLocations = await Promise.all(
       response.data.map(async (allowed) => {
         try {
+          console.log(`Fetching location for owner ID: ${allowed.owner.id}`) // Log owner ID
           const locResponse = await axios.get(`http://localhost:8000/api/locations/${allowed.owner.id}/`, {
-            headers: { Authorization: `Token ${localStorage.getItem('token')}` }
+            headers: { Authorization: `Token ${token}` }
           })
           console.log(`Location for ${allowed.owner.username}:`, locResponse.data)
-          return {
+          const mappedUser = {
             id: allowed.owner.id,
             username: allowed.owner.username,
             name: allowed.owner.username,
             last_updated: locResponse.data[0]?.last_updated || null
           }
+          console.log('Mapped User:', mappedUser) // Log each mapped user
+          return mappedUser
         } catch (locError) {
           console.error(`Location fetch error for ${allowed.owner.username}:`, locError.response?.data || locError.message)
-          return null
+          const fallbackUser = {
+            id: allowed.owner.id,
+            username: allowed.owner.username,
+            name: allowed.owner.username,
+            last_updated: null
+          }
+          console.log('Fallback User:', fallbackUser)
+          return fallbackUser
         }
       })
     )
-    allowedUsers.value = usersWithLocations.filter(user => user && user.last_updated)
+    allowedUsers.value = usersWithLocations.filter(user => user)
+    console.log('Processed Allowed Users:', allowedUsers.value)
   } catch (error) {
     console.error('Fetch Allowed By Users Error:', error.response ? error.response.data : error.message)
     allowedUsers.value = []
@@ -88,7 +101,7 @@ const fetchAllowedUsers = async () => {
 }
 
 const handleUserAllowed = () => {
-  fetchAllowedUsers() // Refresh allowed users after adding permission
+  fetchAllowedUsers()
 }
 
 provide('selectUser', selectUser)
