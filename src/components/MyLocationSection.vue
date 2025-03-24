@@ -17,7 +17,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, inject } from 'vue'
+import { ref, onMounted, inject, onUnmounted } from 'vue'
 import L from 'leaflet'
 import LocationCard from './LocationCard.vue'
 import axios from 'axios'
@@ -49,7 +49,7 @@ const setMapView = (map) => {
   if (myLocation.value.lat && myLocation.value.lng) {
     map.setView([myLocation.value.lat, myLocation.value.lng], 13)
     if (marker.value && map.hasLayer(marker.value)) {
-      marker.value.remove()
+      map.removeLayer(marker.value)
     }
     marker.value = L.marker([myLocation.value.lat, myLocation.value.lng], { icon: customIcon })
       .addTo(map)
@@ -132,6 +132,13 @@ const handleLocationUpdate = (updatedData) => {
     }
   }
 }
+
+onUnmounted(() => {
+  if (marker.value && mapView.value && mapView.value.hasLayer(marker.value)) {
+    mapView.value.removeLayer(marker.value)
+  }
+  marker.value = null
+})
 
 defineExpose({ setMapView })
 </script>
