@@ -31,13 +31,14 @@ const emit = defineEmits(['refresh'])
 
 const deleteUser = async (id) => {
   try {
-    await axios.delete(`http://localhost:8000/api/shared-users/${id}/`, {
+    console.log('Deleting AllowedUser with ID:', id) // Debug the ID
+    await axios.delete(`http://localhost:8000/api/allowed-users/${id}/`, {
       headers: { Authorization: `Token ${localStorage.getItem('token')}` }
     })
-    console.log(`Deleted shared user with id ${id}`)
+    console.log(`Deleted allowed user with id ${id}`)
     emit('refresh') // Tell SidePanel to re-fetch
   } catch (error) {
-    console.error('Delete Shared User Error:', error.response ? error.response.data : error.message)
+    console.error('Delete Allowed User Error:', error.response ? error.response.data : error.message)
   }
 }
 </script>
