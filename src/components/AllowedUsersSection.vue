@@ -1,7 +1,7 @@
 <!-- src/components/AllowedUsersSection.vue -->
 <template>
   <div class="allowed-users-section">
-    <h3>Allowed User Locations</h3>
+    <h3>Received Permission</h3>
     <div v-if="users.length === 0" class="empty-message">
       No users have allowed you to view their locations yet.
     </div>
@@ -14,7 +14,7 @@
 </template>
 
 <script setup>
-import LocationCard from './LocationCard.vue' 
+import LocationCard from './LocationCard.vue'
 
 defineProps({
   users: {
