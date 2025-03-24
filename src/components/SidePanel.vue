@@ -8,7 +8,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, inject, provide } from 'vue'
+import { ref, onMounted, nextTick, inject, provide } from 'vue'
 import MyLocationSection from './MyLocationSection.vue'
 import SharedUsersSection from './SharedUsersSection.vue'
 import AllowedUsersSection from './AllowedUsersSection.vue'
@@ -19,13 +19,15 @@ const sharedUsers = ref([])
 const allowedUsers = ref([])
 const showAllowModal = ref(false)
 const selectUser = inject('selectUser')
+const mapRef = inject('mapRef')
 
 onMounted(async () => {
-  const map = inject('mapRef')
-  if (myLocation.value && map) {
-    myLocation.value.setMapView(map)
+  await nextTick()
+  if (myLocation.value && mapRef.value) {
+    console.log('Setting map view for MyLocationSection')
+    myLocation.value.setMapView(mapRef.value)
   } else {
-    console.error('SidePanel: Refs not properly set', { myLocation: !!myLocation.value, map: !!map })
+    console.error('SidePanel: Refs not properly set', { myLocation: !!myLocation.value, map: !!mapRef.value })
   }
   await Promise.all([fetchSharedUsers(), fetchAllowedUsers()])
 })

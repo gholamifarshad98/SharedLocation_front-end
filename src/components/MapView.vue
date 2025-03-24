@@ -7,7 +7,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, inject, onUnmounted } from 'vue'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import axios from 'axios'
@@ -17,22 +17,31 @@ const props = defineProps({
 })
 
 const map = ref(null)
-let leafletMap = null
+const mapRef = inject('mapRef')
 const markers = ref([])
+
+const customIcon = L.icon({
+  iconUrl: '/images/marker-icon.png',
+  shadowUrl: '/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+})
 
 onMounted(() => {
   if (!map.value) {
     console.error('Map container not found')
     return
   }
-  leafletMap = L.map(map.value).setView([0, 0], 13)
+  mapRef.value = L.map(map.value).setView([0, 0], 13)
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-  }).addTo(leafletMap)
+  }).addTo(mapRef.value)
 })
 
 const fetchUserLocation = async (userId) => {
-  if (!leafletMap) {
+  if (!mapRef.value) {
     console.error('Leaflet map not initialized')
     return
   }
@@ -43,17 +52,28 @@ const fetchUserLocation = async (userId) => {
     console.log('User Location Response:', response.data)
     if (response.data.length > 0) {
       const latestLocation = response.data[0]
-      leafletMap.setView([latestLocation.latitude, latestLocation.longitude], 13)
-      markers.value.forEach(marker => marker.remove())
+      mapRef.value.setView([latestLocation.latitude, latestLocation.longitude], 13)
+      // Safely remove markers
+      markers.value.forEach(marker => {
+        if (marker && mapRef.value.hasLayer(marker)) {
+          marker.remove()
+        }
+      })
       markers.value = []
-      const marker = L.marker([latestLocation.latitude, latestLocation.longitude])
-        .addTo(leafletMap)
+      const marker = L.marker([latestLocation.latitude, latestLocation.longitude], { icon: customIcon })
+        .addTo(mapRef.value)
         .bindPopup(`${latestLocation.user.username}<br>Last Updated: ${latestLocation.last_updated}`)
         .openPopup()
       markers.value.push(marker)
     } else {
       console.warn('No location data available for user:', userId)
-      leafletMap.setView([0, 0], 2) // Reset to world view
+      mapRef.value.setView([0, 0], 2)
+      markers.value.forEach(marker => {
+        if (marker && mapRef.value.hasLayer(marker)) {
+          marker.remove()
+        }
+      })
+      markers.value = []
     }
   } catch (error) {
     console.error('Fetch Location Error:', error.response ? error.response.data : error.message)
@@ -63,8 +83,26 @@ const fetchUserLocation = async (userId) => {
 watch(() => props.selectedUser, (newUser) => {
   if (newUser && newUser.id) {
     fetchUserLocation(newUser.id)
+  } else {
+    // Clear markers if no user is selected
+    if (mapRef.value) {
+      markers.value.forEach(marker => {
+        if (marker && mapRef.value.hasLayer(marker)) {
+          marker.remove()
+        }
+      })
+      markers.value = []
+      mapRef.value.setView([0, 0], 2)
+    }
   }
 }, { immediate: true })
+
+onUnmounted(() => {
+  if (mapRef.value) {
+    mapRef.value.remove()
+    mapRef.value = null
+  }
+})
 
 defineExpose({ fetchUserLocation })
 </script>

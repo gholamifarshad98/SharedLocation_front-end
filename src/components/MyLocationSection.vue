@@ -17,18 +17,45 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, inject } from 'vue'
+import L from 'leaflet'
 import LocationCard from './LocationCard.vue'
 import axios from 'axios'
 
 const myLocation = ref({ lat: 0, lng: 0 })
 const userData = ref({ username: '', id: null, last_updated: null })
-const mapView = ref(null)
+const mapView = inject('mapRef')
 const loading = ref(false)
+const marker = ref(null)
+
+const customIcon = L.icon({
+  iconUrl: '/images/marker-icon.png',
+  shadowUrl: '/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+})
 
 onMounted(async () => {
   await fetchLocation()
 })
+
+const setMapView = (map) => {
+  if (!map) {
+    console.error('No map provided to setMapView')
+    return
+  }
+  if (myLocation.value.lat && myLocation.value.lng) {
+    map.setView([myLocation.value.lat, myLocation.value.lng], 13)
+    if (marker.value && map.hasLayer(marker.value)) {
+      marker.value.remove()
+    }
+    marker.value = L.marker([myLocation.value.lat, myLocation.value.lng], { icon: customIcon })
+      .addTo(map)
+      .bindPopup(`${userData.value.username}<br>Last Updated: ${userData.value.last_updated}`)
+  }
+}
 
 const fetchLocation = async () => {
   loading.value = true
@@ -42,9 +69,12 @@ const fetchLocation = async () => {
       myLocation.value = { lat: latest.latitude, lng: latest.longitude }
       userData.value = { 
         username: latest.user.username, 
-        name: latest.user.username, // Adjust if you have a separate name field
+        name: latest.user.username,
         id: latest.user.id,
         last_updated: latest.last_updated
+      }
+      if (mapView.value) {
+        setMapView(mapView.value)
       }
     }
   } catch (error) {
@@ -77,6 +107,9 @@ const setCurrentLocation = async () => {
       id: Number(localStorage.getItem('userId')),
       last_updated: response.data.last_updated
     }
+    if (mapView.value) {
+      setMapView(mapView.value)
+    }
   } catch (error) {
     console.error('Set Location Error:', error.response ? error.response.data : error.message)
   } finally {
@@ -84,24 +117,23 @@ const setCurrentLocation = async () => {
   }
 }
 
-// New handler for the location-updated event
 const handleLocationUpdate = (updatedData) => {
-  // Update the local userData object with the new last_updated value
   userData.value = {
     ...userData.value,
     last_updated: updatedData.last_updated
   }
-  
-  // Update the location if coordinates are provided
   if (updatedData.latitude && updatedData.longitude) {
     myLocation.value = {
       lat: updatedData.latitude,
       lng: updatedData.longitude
     }
+    if (mapView.value) {
+      setMapView(mapView.value)
+    }
   }
 }
 
-defineExpose({ setMapView: (map) => (mapView.value = map) })
+defineExpose({ setMapView })
 </script>
 
 <style scoped>

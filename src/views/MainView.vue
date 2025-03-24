@@ -13,13 +13,14 @@ import MapView from '../components/MapView.vue'
 import axios from 'axios'
 
 const selectedUser = ref(null)
-const map = ref(null)
+const mapRef = ref(null) // Map ref for injection
 
 const selectUser = (user) => {
   selectedUser.value = user
 }
 
 provide('selectUser', selectUser)
+provide('mapRef', mapRef)
 
 onMounted(async () => {
   try {
@@ -31,7 +32,7 @@ onMounted(async () => {
       const latest = response.data[0]
       selectedUser.value = {
         id: latest.user.id,
-        name: latest.user.username // Ensure 'name' matches what LocationCard expects
+        name: latest.user.username
       }
     }
   } catch (error) {
